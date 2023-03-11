@@ -32,7 +32,7 @@ module.exports.createCard = (req, res) => {
   .then(card => res.status(SUCCESS_CREATED).send({ data: card }))
   .catch((err) => {
     if (err.name==='ValidationError') {
-      res.status(VALIDATION_ERROR).send({ message: `Ошибка создания карточки: ${err}` });
+      res.status(VALIDATION_ERROR).send({ message: `Ошибка создания карточки, переданы некорректные данные: ${err}` });
       return;
     }
     res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка: ${err}` })
@@ -62,6 +62,10 @@ module.exports.likeCard = (req, res) => {
     .orFail(()=> { throw new CardNotFound(); })
     .then(card => res.status(SUCCESS).send({ data: card }))
     .catch((err) => {
+      if (err.name==='ValidationError') {
+        res.status(VALIDATION_ERROR).send({ message: `Переданы некорректные данные: ${err}` });
+        return;
+      }
       if (err.name === 'CardNotFound') {
         res.status(NOT_FOUND).send({ message: 'Карточка не найдена' });
         return;
@@ -79,6 +83,10 @@ module.exports.dislikeCard = (req, res) => {
     .orFail(()=> { throw new CardNotFound(); })
     .then(card => res.status(SUCCESS).send({ data: card }))
     .catch((err) => {
+      if (err.name==='ValidationError') {
+        res.status(VALIDATION_ERROR).send({ message: `Переданы некорректные данные: ${err}` });
+        return;
+      }
       if (err.name === 'CardNotFound') {
         res.status(NOT_FOUND).send({ message: 'Карточка не найдена' });
         return;

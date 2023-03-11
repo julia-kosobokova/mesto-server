@@ -26,7 +26,7 @@ module.exports.findUsers = (req, res) => {
 // Поиск пользователя по Id
 module.exports.findUserId = (req, res) => {
   User.findById(req.params.userId)
-  .orFail(()=> { throw new UserNotFound(); })
+    .orFail(()=> { throw new UserNotFound(); })
     .then(user => res.status(SUCCESS).send({ data: user }))
     .catch((err) => {
       if (err.name === 'UserNotFound') {
@@ -45,7 +45,7 @@ module.exports.createUser = (req, res) => {
     .then(user => res.status(SUCCESS_CREATED).send({ data: user }))
     .catch((err) => {
       if (err.name==='ValidationError') {
-        res.status(VALIDATION_ERROR).send({ message: `Ошибка создания пользователя: ${err}` });
+        res.status(VALIDATION_ERROR).send({ message: `Ошибка создания пользователя, переданы некорректные данные: ${err}` });
         return;
       }
       res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка: ${err}` })
@@ -62,10 +62,15 @@ module.exports.updateUser = (req, res) => {
     runValidators: true, // данные будут валидированы перед изменением
     upsert: true // если пользователь не найден, он будет создан
   })
+    .orFail(()=> { throw new UserNotFound(); })
     .then(user => res.status(SUCCESS).send({ data: user }))
     .catch((err) => {
       if (err.name==='ValidationError') {
-        res.status(VALIDATION_ERROR).send({ message: `Ошибка обновления пользователя: ${err}` });
+        res.status(VALIDATION_ERROR).send({ message: `Ошибка обновления пользователя, переданы некорректные данные: ${err}` });
+        return;
+      }
+      if (err.name === 'UserNotFound') {
+        res.status(NOT_FOUND).send({ message: 'Пользователь не найден' });
         return;
       }
       res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка ${err}` })
@@ -82,10 +87,15 @@ module.exports.updateAvatar = (req, res) => {
     runValidators: true, // данные будут валидированы перед изменением
     upsert: true // если пользователь не найден, он будет создан
   })
+    .orFail(()=> { throw new UserNotFound(); })
     .then(user => res.status(SUCCESS).send({ data: user }))
     .catch((err) => {
       if (err.name==='ValidationError') {
-        res.status(VALIDATION_ERROR).send({ message: `Ошибка обновления аватара: ${err}` });
+        res.status(VALIDATION_ERROR).send({ message: `Ошибка обновления аватара, переданы некорректные данные: ${err}` });
+        return;
+      }
+      if (err.name === 'UserNotFound') {
+        res.status(NOT_FOUND).send({ message: 'Пользователь не найден' });
         return;
       }
       res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка ${err}` })

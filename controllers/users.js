@@ -1,18 +1,40 @@
 const User = require('../models/user');
 
+const SUCCESS = 200;
+const SUCCESS_CREATED = 201;
+const VALIDATION_ERROR = 400;
+const NOT_FOUND = 404;
+const SERVER_ERROR = 500;
+
+class UserNotFound extends Error {
+  constructor() {
+    super();
+    this.status = NOT_FOUND;
+    this.message = 'Пользователь не найден';
+    this.name = this.constructor.name;
+  }
+}
+
 // Поиск всех пользователей
 module.exports.findUsers = (req, res) => {
 
   User.find({})
-    .then(user => res.send({ data: user }))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+    .then(user => res.status(SUCCESS).send({ data: user }))
+    .catch((err) => res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка ${err}` }));
 };
 
 // Поиск пользователя по Id
 module.exports.findUserId = (req, res) => {
   User.findById(req.params.userId)
-    .then(user => res.send({ data: user }))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+  .orFail(()=> { throw new UserNotFound(); })
+    .then(user => res.status(SUCCESS).send({ data: user }))
+    .catch((err) => {
+      if (err.name === 'UserNotFound') {
+        res.status(NOT_FOUND).send({ message: 'Пользователь не найден' });
+        return;
+      }
+      res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка ${err}` });
+    });
 };
 
 // Создание нового пользователя
@@ -20,8 +42,14 @@ module.exports.createUser = (req, res) => {
   const { name, about, avatar } = req.body;
 
   User.create({ name, about, avatar })
-    .then(user => res.status(201).send({ data: user }))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+    .then(user => res.status(SUCCESS_CREATED).send({ data: user }))
+    .catch((err) => {
+      if (err.name==='ValidationError') {
+        res.status(VALIDATION_ERROR).send({ message: `Ошибка создания пользователя: ${err}` });
+        return;
+      }
+      res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка: ${err}` })
+    });
 };
 
 // Обновление профиля
@@ -34,8 +62,14 @@ module.exports.updateUser = (req, res) => {
     runValidators: true, // данные будут валидированы перед изменением
     upsert: true // если пользователь не найден, он будет создан
   })
-    .then(user => res.send({ data: user }))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+    .then(user => res.status(SUCCESS).send({ data: user }))
+    .catch((err) => {
+      if (err.name==='ValidationError') {
+        res.status(VALIDATION_ERROR).send({ message: `Ошибка обновления пользователя: ${err}` });
+        return;
+      }
+      res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка ${err}` })
+    });
 };
 
 // Обновление аватара
@@ -48,6 +82,12 @@ module.exports.updateAvatar = (req, res) => {
     runValidators: true, // данные будут валидированы перед изменением
     upsert: true // если пользователь не найден, он будет создан
   })
-    .then(user => res.send({ data: user }))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+    .then(user => res.status(SUCCESS).send({ data: user }))
+    .catch((err) => {
+      if (err.name==='ValidationError') {
+        res.status(VALIDATION_ERROR).send({ message: `Ошибка обновления аватара: ${err}` });
+        return;
+      }
+      res.status(SERVER_ERROR).send({ message: `На сервере произошла ошибка ${err}` })
+    });
 };
